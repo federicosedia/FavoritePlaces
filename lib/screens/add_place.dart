@@ -1,24 +1,38 @@
-import 'package:favorite_places/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AddPlaceScreen extends StatefulWidget {
+import 'package:favorite_places/providers/user_places.dart';
+
+class AddPlaceScreen extends ConsumerStatefulWidget {
   const AddPlaceScreen({super.key});
 
   @override
-  State<AddPlaceScreen> createState() {
+  ConsumerState<AddPlaceScreen> createState() {
     return _AddPlaceScreenState();
   }
 }
 
-class _AddPlaceScreenState extends State<AddPlaceScreen> {
+class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   final _titleController = TextEditingController();
 
 //chiamo il metodo dispose per il titlecontroller quando verrà inviato
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
     _titleController.dispose();
+  }
+
+  void _savePlace() {
+    final enteredTitle = _titleController.text;
+
+    if (enteredTitle == null || enteredTitle.isEmpty) {
+      return;
+    } else {
+      //con ref mi richiamo il provider e con read leggo una sola volta il provider(quando aggiungo l'oggetto)
+      //accediamo alla classe e con notifier collegata posso utilizzare un metodo di quella classe e quindi utilizzo addplace
+      ref.read(userPlacesProvider.notifier).addPlace(enteredTitle);
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -41,7 +55,7 @@ class _AddPlaceScreenState extends State<AddPlaceScreen> {
             ),
             const SizedBox(height: 30),
             ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: _savePlace,
               icon: const Icon(Icons.add),
               label: const Text('Add Place'),
             )
