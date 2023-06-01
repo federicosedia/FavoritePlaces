@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:favorite_places/widgets/image_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,6 +17,7 @@ class AddPlaceScreen extends ConsumerStatefulWidget {
 
 class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   final _titleController = TextEditingController();
+  File? _selectedImage;
 
 //chiamo il metodo dispose per il titlecontroller quando verrà inviato
   @override
@@ -25,12 +29,16 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   void _savePlace() {
     final enteredTitle = _titleController.text;
 
-    if (enteredTitle == null || enteredTitle.isEmpty) {
+    if (enteredTitle == null ||
+        enteredTitle.isEmpty ||
+        _selectedImage == null) {
       return;
     } else {
       //con ref mi richiamo il provider e con read leggo una sola volta il provider(quando aggiungo l'oggetto)
       //accediamo alla classe e con notifier collegata posso utilizzare un metodo di quella classe e quindi utilizzo addplace
-      ref.read(userPlacesProvider.notifier).addPlace(enteredTitle);
+      ref
+          .read(userPlacesProvider.notifier)
+          .addPlace(enteredTitle, _selectedImage!);
       Navigator.of(context).pop();
     }
   }
@@ -53,7 +61,14 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
               controller: _titleController,
               style: TextStyle(color: Theme.of(context).colorScheme.background),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 10),
+            //image input
+            ImageInput(
+              onPickImage: (image) {
+                _selectedImage = image;
+              },
+            ),
+            const SizedBox(height: 26),
             ElevatedButton.icon(
               onPressed: _savePlace,
               icon: const Icon(Icons.add),
