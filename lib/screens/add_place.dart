@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:favorite_places/widgets/image_input.dart';
+import 'package:favorite_places/widgets/location_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,13 +20,6 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   final _titleController = TextEditingController();
   File? _selectedImage;
 
-//chiamo il metodo dispose per il titlecontroller quando verrà inviato
-  @override
-  void dispose() {
-    super.dispose();
-    _titleController.dispose();
-  }
-
   void _savePlace() {
     final enteredTitle = _titleController.text;
 
@@ -43,6 +37,13 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
     }
   }
 
+//chiamo il metodo dispose per il titlecontroller quando verrà inviato
+  @override
+  void dispose() {
+    super.dispose();
+    _titleController.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,25 +56,26 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
         child: Column(
           children: [
             TextField(
-              decoration: const InputDecoration(
-                label: Text('Title'),
-              ),
+              decoration: const InputDecoration(labelText: 'Title'),
               controller: _titleController,
-              style: TextStyle(color: Theme.of(context).colorScheme.background),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
             ),
             const SizedBox(height: 10),
-            //image input
             ImageInput(
               onPickImage: (image) {
                 _selectedImage = image;
               },
             ),
-            const SizedBox(height: 26),
+            const SizedBox(height: 10),
+            LocationInput(),
+            const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _savePlace,
               icon: const Icon(Icons.add),
               label: const Text('Add Place'),
-            )
+            ),
           ],
         ),
       ),
