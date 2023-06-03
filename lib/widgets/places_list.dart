@@ -26,12 +26,17 @@ class PlacesList extends StatelessWidget {
       itemBuilder: (ctx, index) => ListTile(
         leading: CircleAvatar(
           radius: 26,
-          //non possiamo usare il widget File ma possiamo usare fileimage che è un fornitore di immagini
           backgroundImage: FileImage(places[index].image),
         ),
         title: Text(
           places[index].title,
           style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                color: Theme.of(context).colorScheme.onBackground,
+              ),
+        ),
+        subtitle: Text(
+          places[index].location.address,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(
                 color: Theme.of(context).colorScheme.onBackground,
               ),
         ),

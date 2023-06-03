@@ -1,11 +1,13 @@
 import 'dart:io';
 
-import 'package:favorite_places/widgets/image_input.dart';
+import 'package:favorite_places/models/place.dart';
 import 'package:favorite_places/widgets/location_input.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
 
+import 'package:favorite_places/widgets/image_input.dart';
 import 'package:favorite_places/providers/user_places.dart';
+import 'package:location/location.dart';
 
 class AddPlaceScreen extends ConsumerStatefulWidget {
   const AddPlaceScreen({super.key});
@@ -19,29 +21,29 @@ class AddPlaceScreen extends ConsumerStatefulWidget {
 class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
   final _titleController = TextEditingController();
   File? _selectedImage;
+  //stessa logica per selectedimage
+  PlaceLocation? _selectedlocation;
 
   void _savePlace() {
     final enteredTitle = _titleController.text;
 
-    if (enteredTitle == null ||
-        enteredTitle.isEmpty ||
-        _selectedImage == null) {
+    if (enteredTitle.isEmpty ||
+        _selectedImage == null ||
+        _selectedlocation == null) {
       return;
-    } else {
-      //con ref mi richiamo il provider e con read leggo una sola volta il provider(quando aggiungo l'oggetto)
-      //accediamo alla classe e con notifier collegata posso utilizzare un metodo di quella classe e quindi utilizzo addplace
-      ref
-          .read(userPlacesProvider.notifier)
-          .addPlace(enteredTitle, _selectedImage!);
-      Navigator.of(context).pop();
     }
+
+    ref
+        .read(userPlacesProvider.notifier)
+        .addPlace(enteredTitle, _selectedImage!, _selectedlocation!);
+
+    Navigator.of(context).pop();
   }
 
-//chiamo il metodo dispose per il titlecontroller quando verrà inviato
   @override
   void dispose() {
-    super.dispose();
     _titleController.dispose();
+    super.dispose();
   }
 
   @override
@@ -50,7 +52,6 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
       appBar: AppBar(
         title: const Text('Add new Place'),
       ),
-      //avvolgo in singlechildscrollview per permetter che sia sempre scrollabile
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -69,7 +70,11 @@ class _AddPlaceScreenState extends ConsumerState<AddPlaceScreen> {
               },
             ),
             const SizedBox(height: 10),
-            LocationInput(),
+            LocationInput(
+              onselectLocation: (location) {
+                _selectedlocation = location;
+              },
+            ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _savePlace,

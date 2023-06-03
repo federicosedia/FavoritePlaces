@@ -10,8 +10,8 @@ class PlacesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    //aggiungendo al provider StateNotifierProvider il tipo di dati che si aspetta allora anche il nostro userPlaces saprà il tipo di dato
     final userPlaces = ref.watch(userPlacesProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Places'),
