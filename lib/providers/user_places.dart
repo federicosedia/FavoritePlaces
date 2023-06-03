@@ -1,16 +1,72 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:favorite_places/models/place.dart';
 
 import 'package:path_provider/path_provider.dart' as syspaths;
 import 'package:path/path.dart' as path;
-import 'package:sqflite/sqflite.dart' as sql ;
-import 'package:sqflite/sqlite_api.dart' as  ;
+import 'package:sqflite/sqflite.dart' as sql;
+import 'package:sqflite/sqlite_api.dart';
+
+Future<Database> _getDatabase() async {
+  //utilizziamo sql per memorizzare gli altri dati del place che voglio salvare
+  //questo metodo restituisce un futuro che restituisce un percorso del database sul dispositivo
+
+  final dbpath = await sql.getDatabasesPath();
+  //ottenuto il path chiamiamo opendatabase
+  //ma non utilizziamo dbpath ma un path simile a quanto fatto per l'immagine
+  //con questo metodo possiamo utilizzare il metodo join sul path
+  //quindi si specifica il path e il nome del database e se non è ancora esistente allora lo crea
+  //deve terminare con ".db"
+  //inoltre bisogna specificare anche oncreate. Oncreate accetta come valore una funzione che viene eseguita quando viene creato il db la prima volta
+  //quindi mi salvo il db che andrò a creare in una nuova variabile
+  //essendo un future allora metto anche await
+  final db = await sql.openDatabase(
+      path.join(
+        dbpath,
+        "places.db",
+      ), onCreate: (db, version) {
+    //verrà tornata una funzione che in pratica è una query che verrà eseguita nel db quando viene creato
+    //real= numero con valori decimali
+    //string =text
+    return db.execute(
+        'CREATE TABLE user_places(id TEXT PRIMARY KEY, title TEXT, image TEXT, lat REAL, lng REAL, address TEXT)');
+  },
+      //la versione dovrebbe aggiornarsi ogni volta che si modifica la query
+      version: 1);
+  return db;
+}
 
 class UserPlacesNotifier extends StateNotifier<List<Place>> {
   UserPlacesNotifier() : super(const []);
+  //caricare i dati all'avvio del db
+  Future<void> loadPlaces() async {
+    final db = await _getDatabase();
+    final data = await db.query(
+      'user_places',
+    );
+    //row è una mappa quindi accedo tramite la chiave ovvero le colonne
+    final places = data
+        .map(
+          //quindi da una riga voglio fare un return di un place
+          //immagine è un tipo file quindi non come il titolo
+          //location è di tipo placelocation
+          (row) => Place(
+            id: row['id'] as String,
+            title: row['title'] as String,
+            image: File(row['image'] as String),
+            location: PlaceLocation(
+                latitude: row['lat'] as double,
+                longitude: row['lng'] as double,
+                address: row['address'] as String),
+          ),
+          //perchè non voglio un iterabile
+        )
+        .toList();
+    state = places;
+  }
 
   void addPlace(String title, File image, PlaceLocation location) async {
     //creo prima il percorso dove verrà salvato l'elemento e poi l'elemento place
@@ -30,42 +86,22 @@ class UserPlacesNotifier extends StateNotifier<List<Place>> {
       image: image,
       location: location,
     );
-  //utilizziamo sql per memorizzare gli altri dati del place che voglio salvare
-    //questo metodo restituisce un futuro che restituisce un percorso del database sul dispositivo
-
-    final dbpath = await sql.getDatabasesPath();
-    //ottenuto il path chiamiamo opendatabase
-    //ma non utilizziamo dbpath ma un path simile a quanto fatto per l'immagine
-    //con questo metodo possiamo utilizzare il metodo join sul path
-    //quindi si specifica il path e il nome del database e se non è ancora esistente allora lo crea
-  //deve terminare con ".db"
-  //inoltre bisogna specificare anche oncreate. Oncreate accetta come valore una funzione che viene eseguita quando viene creato il db la prima volta
-  //quindi mi salvo il db che andrò a creare in una nuova variabile
-    //essendo un future allora metto anche await
-    final db = await sql.openDatabase(path.join(dbpath, "places.db",), 
-    onCreate: (db, version){
-      //verrà tornata una funzione che in pratica è una query che verrà eseguita nel db quando viene creato
-      //real= numero con valori decimali
-      //string =text
-      return db.execute('CREATE TABLE user_places(id TEXT PRIMARY KEY, title TEXT, image TEXT, lat REAL, lng REAL, address TEXT)');
-    },
-    //la versione dovrebbe aggiornarsi ogni volta che si modifica la query
-    version: 1
-    );
-
+    final db = await _getDatabase();
 //prima parte di insert il nome della tabella
 //seconda parte una mappa dove le chiavi sono i nomi delle colonne e i valori sono i dati da inserire
-    db.insert('user_places', {
-      'id': newPlace.id,
-      'title': newPlace.title,
-      'image':newPlace.image.path,
-      'lat': newPlace.location.latitude,
-      'lng': newPlace.location.longitude,
-      'address': newPlace.location.address,
-    },);
+    db.insert(
+      'user_places',
+      {
+        'id': newPlace.id,
+        'title': newPlace.title,
+        'image': newPlace.image.path,
+        'lat': newPlace.location.latitude,
+        'lng': newPlace.location.longitude,
+        'address': newPlace.location.address,
+      },
+    );
 
     state = [newPlace, ...state];
-    
   }
   //Per memorizzare la foto in modo più persistente sfrutto la classe notifier e il pacchetto path_provider
   //path provider ci da l'accesso al percorso dove memorizzare in modo tale che il SO non la cancella
