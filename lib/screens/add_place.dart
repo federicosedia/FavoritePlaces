@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 
 import 'package:favorite_places/widgets/image_input.dart';
 import 'package:favorite_places/providers/user_places.dart';
-import 'package:location/location.dart';
 
 class AddPlaceScreen extends ConsumerStatefulWidget {
   const AddPlaceScreen({super.key});

@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:favorite_places/screens/map.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 
@@ -30,6 +32,26 @@ class _LocationInputState extends State<LocationInput> {
     final lat = _pickedLocation!.latitude;
     final lng = _pickedLocation!.longitude;
     return 'https://maps.googleapis.com/maps/api/staticmap?center=$lat,$lng=&zoom=16&size=600x300&maptype=roadmap&markers=color:red%7Clabel:A%7C$lat,$lng&key=AIzaSyDLcwxUggpPZo8lcbH0TB4Crq5SJjtj4ag';
+  }
+
+//nuovo metodo per non richiamarlo piu volte in gettinglocation e in pickedlocation
+  Future _savePlace(double latitude, double longitude) async {
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$latitude,$longitude&key=AIzaSyDLcwxUggpPZo8lcbH0TB4Crq5SJjtj4ag');
+    final response = await http.get(url);
+    final resData = json.decode(response.body);
+    final address = resData['results'][0]['formatted_address'];
+
+    setState(() {
+      _pickedLocation = PlaceLocation(
+        latitude: latitude,
+        longitude: longitude,
+        address: address,
+      );
+      _isGettingLocation = false;
+    });
+    //dopo aver scelto la posizione chiamo la nuova proprietà e inoltro la posizione nuova
+    widget.onselectLocation(_pickedLocation!);
   }
 
   void _getCurrentLocation() async {
@@ -67,22 +89,23 @@ class _LocationInputState extends State<LocationInput> {
       return;
     }
 
-    final url = Uri.parse(
-        'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=AIzaSyDLcwxUggpPZo8lcbH0TB4Crq5SJjtj4ag');
-    final response = await http.get(url);
-    final resData = json.decode(response.body);
-    final address = resData['results'][0]['formatted_address'];
+    _savePlace(lat, lng);
+  }
 
-    setState(() {
-      _pickedLocation = PlaceLocation(
-        latitude: lat,
-        longitude: lng,
-        address: address,
-      );
-      _isGettingLocation = false;
-    });
-    //dopo aver scelto la posizione chiamo la nuova proprietà e inoltro la posizione nuova
-    widget.onselectLocation(_pickedLocation!);
+//In mapdart ho il navigator pop della mapscreen quindi verranno passati i dati della località scelta tramite quel metodo
+//qui ricevo i dati e quindi metto async e await per attendere che si esce da quella schermata
+//i dati che si ottengono sono di tipo LatLng quindi lo pongo come tipo nel push tra le <>
+  void _selectOnMap() async {
+    final pickedlocation = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute(
+        builder: (ctx) => const MapScreen(),
+      ),
+    );
+    if (pickedlocation == null) {
+      return;
+    }
+    //latitudine e longitutdine della posizione scelta
+    _savePlace(pickedlocation.latitude, pickedlocation.longitude);
   }
 
   @override
@@ -133,7 +156,7 @@ class _LocationInputState extends State<LocationInput> {
             TextButton.icon(
               icon: const Icon(Icons.map),
               label: const Text('Select on Map'),
-              onPressed: () {},
+              onPressed: _selectOnMap,
             ),
           ],
         ),

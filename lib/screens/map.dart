@@ -1,9 +1,7 @@
 import 'package:favorite_places/models/place.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({
@@ -24,6 +22,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  LatLng? pickedlocation;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,7 +32,12 @@ class _MapScreenState extends State<MapScreen> {
         ),
         actions: [
           if (widget.isSelecting)
-            IconButton(onPressed: () {}, icon: const Icon(Icons.save))
+            IconButton(
+              onPressed: () {
+                Navigator.of(context).pop(pickedlocation);
+              },
+              icon: const Icon(Icons.save),
+            ),
         ],
       ),
       // con googlemaps possiamo fare un render della mappa
@@ -41,6 +45,15 @@ class _MapScreenState extends State<MapScreen> {
       //vuole il widget cameraposition e cameraposition vuole target come argomento
 
       body: GoogleMap(
+        //ottiene la posizione in base a dove tocca nella mappa
+        onTap: widget.isSelecting == false
+            ? null
+            : (position) {
+                setState(() {
+                  pickedlocation = position;
+                });
+              },
+
         initialCameraPosition: CameraPosition(
             target: LatLng(
               widget.location.latitude,
@@ -49,15 +62,27 @@ class _MapScreenState extends State<MapScreen> {
             zoom: 16),
         //markers permette di creare un set di markers
         //un set è un elenco di valori ma che non accetta duplicati
-        markers: {
-          Marker(
-            markerId: MarkerId("m1"),
-            position: LatLng(
+        //faccio ugualmente per la position anche per markers
+        markers: (pickedlocation == null && widget.isSelecting)
+            ? {}
+            : {
+                Marker(
+                  markerId: const MarkerId("m1"),
+                  //scelgo la posizione pickedlocation se non nulla altrimenti quella di default
+                  //la sintassi potrebbe anche essere
+                  /* position: pickedlocation!=null ?? LatLng(
               widget.location.latitude,
               widget.location.longitude,
             ),
-          ),
-        },
+            */
+                  position: pickedlocation != null
+                      ? pickedlocation!
+                      : LatLng(
+                          widget.location.latitude,
+                          widget.location.longitude,
+                        ),
+                ),
+              },
       ),
     );
   }
